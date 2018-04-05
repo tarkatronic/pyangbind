@@ -20,6 +20,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from __future__ import unicode_literals
 
 import optparse
 import sys
@@ -41,7 +42,6 @@ from pyang import util
 # Python3 support
 if six.PY3:
   long = int
-  unicode = str
 
 DEBUG = True
 if DEBUG:
@@ -143,10 +143,10 @@ class_map = {
                     int_size=64)
     },
     'string': {
-        "native_type": "unicode",
+        "native_type": "six.text_type",
         "base_type": True,
         "quote_arg": True,
-        "pytype": unicode
+        "pytype": six.text_type
     },
     'decimal64': {
         "native_type": "Decimal",
@@ -232,60 +232,58 @@ class PyangBindClass(plugin.PyangPlugin):
       #     preferable when one has large trees being compiled.
       #   * extensions - support for YANG extensions that pyangbind should look
       #     for, and add as a dictionary with each element.
-      optlist = [
-          optparse.make_option("--use-xpathhelper",
-                               dest="use_xpathhelper",
-                               action="store_true",
-                               help="""Use the xpathhelper module to
-                                       resolve leafrefs"""),
-          optparse.make_option("--split-class-dir",
-                               metavar="DIR",
-                               dest="split_class_dir",
-                               help="""Split the code output into
-                                       multiple directories"""),
-          optparse.make_option("--interesting-extension",
-                              metavar="EXTENSION-MODULE",
-                              default=[],
-                              action="append",
-                              type=str,
-                              dest="pybind_interested_exts",
-                              help="""A set of extensions that
-                                      are interesting and should be
-                                      stored with the class. They
-                                      can be accessed through the
-                                      "extension_dict()" argument.
-                                      Multiple arguments can be
-                                      specified."""),
-          optparse.make_option("--use-extmethods",
-                              dest="use_extmethods",
-                              action="store_true",
-                              help="""Allow a path-keyed dictionary
-                                      to be used to specify methods
-                                      related to a particular class"""),
-          optparse.make_option("--build-rpcs",
-                              dest="build_rpcs",
-                              action="store_true",
-                              help="""Generate class bindings for
-                                      the input and output of RPCs
-                                      defined in each module. These
-                                      are placed at the root of
-                                      each module"""),
-          optparse.make_option("--presence",
-                                dest="generate_presence",
-                                action="store_true",
-                                help="""Capture whether the presence
-                                        keyword is used in the generated
-                                        code."""),
-          optparse.make_option("--build-notifications",
-                              dest="build_notifications",
-                              action="store_true",
-                              help="""Generate class bindings for
-                                      notifications defined in each
-                                      module. These are placed at
-                                      the root of each module"""),
-      ]
-      g = optparser.add_option_group("pyangbind output specific options")
-      g.add_options(optlist)
+      option_group = optparse.OptionGroup(optparser, "pyangbind output specific options")
+      option_group.add_option("--use-xpathhelper",
+                           dest="use_xpathhelper",
+                           action="store_true",
+                           help="""Use the xpathhelper module to
+                                   resolve leafrefs"""),
+      option_group.add_option("--split-class-dir",
+                           metavar="DIR",
+                           dest="split_class_dir",
+                           help="""Split the code output into
+                                   multiple directories"""),
+      option_group.add_option("--interesting-extension",
+                          metavar="EXTENSION-MODULE",
+                          default=[],
+                          action="append",
+                          type=str,
+                          dest="pybind_interested_exts",
+                          help="""A set of extensions that
+                                  are interesting and should be
+                                  stored with the class. They
+                                  can be accessed through the
+                                  "extension_dict()" argument.
+                                  Multiple arguments can be
+                                  specified."""),
+      option_group.add_option("--use-extmethods",
+                          dest="use_extmethods",
+                          action="store_true",
+                          help="""Allow a path-keyed dictionary
+                                  to be used to specify methods
+                                  related to a particular class"""),
+      option_group.add_option("--build-rpcs",
+                          dest="build_rpcs",
+                          action="store_true",
+                          help="""Generate class bindings for
+                                  the input and output of RPCs
+                                  defined in each module. These
+                                  are placed at the root of
+                                  each module"""),
+      option_group.add_option("--presence",
+                            dest="generate_presence",
+                            action="store_true",
+                            help="""Capture whether the presence
+                                    keyword is used in the generated
+                                    code."""),
+      option_group.add_option("--build-notifications",
+                          dest="build_notifications",
+                          action="store_true",
+                          help="""Generate class bindings for
+                                  notifications defined in each
+                                  module. These are placed at
+                                  the root of each module"""),
+      optparser.add_option_group(option_group)
 
 
 # Core function to build the pyangbind output - starting with building the
@@ -334,7 +332,6 @@ def build_pybind(ctx, modules, fd):
 if six.PY3:
   import builtins as __builtin__
   long = int
-  unicode = str
 elif six.PY2:
   import __builtin__
 
@@ -472,7 +469,7 @@ def build_identities(ctx, defnd):
   # Add entries to the class_map such that this identity can be referenced by
   # elements that use this identity ref.
   for i in identity_dict:
-    id_type = {"native_type": """RestrictedClassType(base_type=unicode, """ +
+    id_type = {"native_type": """RestrictedClassType(base_type=six.text_type, """ +
                               """restriction_type="dict_key", """ +
                               """restriction_arg=%s,)""" % identity_dict[i],
                 "restriction_argument": identity_dict[i],
@@ -533,11 +530,11 @@ def build_typedefs(ctx, defnd):
       real_pfx = defining_module.search_one('prefix').arg
 
       if ":" in i.arg:
-        tn = u"%s:%s" % (real_pfx, i.arg.split(":")[1])
+        tn = "%s:%s" % (real_pfx, i.arg.split(":")[1])
       elif i.arg not in base_types:
         # If this was not a base type (defined in YANG) then resolve it
         # to the module it belongs to.
-        tn = u"%s:%s" % (real_pfx, i.arg)
+        tn = "%s:%s" % (real_pfx, i.arg)
       else:
         tn = i.arg
 
@@ -1211,11 +1208,11 @@ def build_elemtype(ctx, et, prefix=False):
     if et.arg == "enumeration":
       enumeration_dict = {}
       for enum in et.search('enum'):
-        enumeration_dict[unicode(enum.arg)] = {}
+        enumeration_dict[six.text_type(enum.arg)] = {}
         val = enum.search_one('value')
         if val is not None:
-          enumeration_dict[unicode(enum.arg)]["value"] = int(val.arg)
-      elemtype = {"native_type": """RestrictedClassType(base_type=unicode, \
+          enumeration_dict[six.text_type(enum.arg)]["value"] = int(val.arg)
+      elemtype = {"native_type": """RestrictedClassType(base_type=six.text_type, \
                                     restriction_type="dict_key", \
                                     restriction_arg=%s,)""" %
                                     (enumeration_dict),
@@ -1265,7 +1262,7 @@ def build_elemtype(ctx, et, prefix=False):
         cls = "leafref"
       else:
         elemtype = {
-            "native_type": "unicode",
+            "native_type": "six.text_type",
             "parent_type": "string",
             "base_type": False,
         }
