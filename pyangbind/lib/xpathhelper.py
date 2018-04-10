@@ -23,13 +23,15 @@ xpathhelper:
   This module maintains an XML ElementTree for the registered Python
   classes, so that XPATH can be used to lookup particular items.
 """
+import uuid
 from collections import OrderedDict
 
-from lxml import etree
 import regex
-import uuid
-from .yangtypes import safe_name
+import six
+from lxml import etree
+
 from .base import PybindBase
+from .yangtypes import safe_name
 
 
 class YANGPathHelperException(Exception):
@@ -171,7 +173,7 @@ class YANGPathHelper(PybindXpathHelper):
 
       if attributes is not None:
         epath += tagname + "["
-        for k, v in attributes.iteritems():
+        for k, v in six.iteritems(attributes):
           # handling for rfc6020 current() specification
           if "current()" in v:
             remaining_path = regex.sub("current\(\)(?P<remaining>.*)",
@@ -273,7 +275,7 @@ class YANGPathHelper(PybindXpathHelper):
 
     added_item = etree.SubElement(parent_o, tagname, obj_ptr=this_obj_id)
     if attributes is not None:
-      for k, v in attributes.iteritems():
+      for k, v in six.iteritems(attributes):
         added_item.set(k, v)
 
   def unregister(self, object_path, caller=False):
@@ -304,7 +306,7 @@ class YANGPathHelper(PybindXpathHelper):
     return retr_obj
 
   def get(self, object_path, caller=False):
-    if isinstance(object_path, str) or isinstance(object_path, unicode):
+    if isinstance(object_path, six.string_types):
       object_path = self._path_parts(object_path)
 
     return [self._library[i.get("obj_ptr")]
@@ -323,7 +325,7 @@ class YANGPathHelper(PybindXpathHelper):
 
   def get_list(self, object_path, caller=False,
                 exception_to_raise=YANGPathHelperException):
-    if isinstance(object_path, str) or isinstance(object_path, unicode):
+    if isinstance(object_path, six.string_types):
       object_path = self._path_parts(object_path)
 
     parent_obj = self.get_unique(object_path[:-1], caller=caller,
