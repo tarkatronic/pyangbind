@@ -52,10 +52,10 @@ class pybindJSONDecodeError(Exception):
 class pybindJSONEncoder(json.JSONEncoder):
   def _preprocess_element(self, d, mode="default"):
     nd = {}
-    if isinstance(d, OrderedDict) or isinstance(d, dict):
+    if isinstance(d, (dict, OrderedDict)):
         index = 0
         for k in d:
-            if isinstance(d[k], dict) or isinstance(d[k], OrderedDict):
+            if isinstance(d[k], (dict, OrderedDict)):
                 nd[k] = self._preprocess_element(d[k], mode=mode)
                 if getattr(d, "_user_ordered", False):
                     nd[k]['__yang_order'] = index
@@ -155,7 +155,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       return six.text_type(obj)
     elif isinstance(obj, six.integer_types):
       return int(obj)
-    elif isinstance(obj, [YANGBool, bool]):
+    elif isinstance(obj, (YANGBool, bool)):
       return bool(obj)
     elif isinstance(obj, Decimal):
       return six.text_type(obj) if mode == "ietf" else float(obj)
@@ -230,7 +230,7 @@ class pybindJSONDecoder(object):
 
     # Handle the case where we are supplied with a scalar value rather than
     # a list
-    if not isinstance(d, dict) or isinstance(d, list):
+    if not isinstance(d, (dict, list)):
       set_method = getattr(obj._parent, "_set_%s" % safe_name(obj._yang_name))
       set_method(d)
       return obj
@@ -365,7 +365,7 @@ class pybindJSONDecoder(object):
 
     # Handle the case where we are supplied with a scalar value rather than
     # a list
-    if not isinstance(d, dict) or isinstance(d, list):
+    if not isinstance(d, (dict, list)):
       set_method = getattr(obj._parent, "_set_%s" % safe_name(obj._yang_name))
       set_method(d)
       return obj
